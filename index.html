@@ -82,6 +82,7 @@
   </div>
 
 <script>
+// REMOVE this old line, since we’re no longer defining WEBHOOK_URL manually
 // const WEBHOOK_URL = localStorage.getItem('zaya_webhook') || '';
 
 async function initWebhook() {
@@ -94,16 +95,20 @@ async function initWebhook() {
         localStorage.setItem("zaya_webhook", data.webhook);
 
         console.log("Webhook URL set from backend:", data.webhook);
+
+        // Show the URL in the UI
+        document.getElementById('whTarget').textContent = data.webhook || 'not set';
     } catch (err) {
         console.error("Failed to fetch webhook URL:", err);
+        document.getElementById('whTarget').textContent = 'error';
     }
 }
 
 // Run immediately when the page loads
 initWebhook();
 
-
-document.getElementById('whTarget').textContent = WEBHOOK_URL || 'not set';
+// ❌ REMOVE this line — it references WEBHOOK_URL which no longer exists
+// document.getElementById('whTarget').textContent = WEBHOOK_URL || 'not set';
 
 const chat = document.getElementById('chat');
 const text = document.getElementById('text');
@@ -123,14 +128,17 @@ function pushMsg(role, content){
 }
 
 async function postToWebhook(payload, files){
-  if(!WEBHOOK_URL){
+  const url = localStorage.getItem('zaya_webhook'); // ✅ NEW: get URL dynamically
+  if(!url){
     alert('Set your n8n webhook first.');
     return { error: 'No webhook set' };
   }
   const form = new FormData();
   form.append('payload', new Blob([JSON.stringify(payload)], {type:'application/json'}));
-  if(files && files.length){ for (const f of files) form.append('files', f, f.name||'upload'); }
-  const res = await fetch(WEBHOOK_URL, { method:'POST', body: form });
+  if(files && files.length){ 
+    for (const f of files) form.append('files', f, f.name||'upload'); 
+  }
+  const res = await fetch(url, { method:'POST', body: form });
   const data = await res.json().catch(()=>({reply:'Received. Processing...'}));
   return data;
 }
@@ -187,5 +195,6 @@ function getSessionId(){
   return id;
 }
 </script>
+
 </body>
 </html>
