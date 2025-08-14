@@ -82,7 +82,27 @@
   </div>
 
 <script>
-const WEBHOOK_URL = localStorage.getItem('zaya_webhook') || '';
+// const WEBHOOK_URL = localStorage.getItem('zaya_webhook') || '';
+
+async function initWebhook() {
+    try {
+        // Call your FastAPI backend to get the webhook URL
+        const res = await fetch("http://127.0.0.1:8000/get-webhook");
+        const data = await res.json();
+        
+        // Save to localStorage so rest of your script uses it
+        localStorage.setItem("zaya_webhook", data.webhook);
+
+        console.log("Webhook URL set from backend:", data.webhook);
+    } catch (err) {
+        console.error("Failed to fetch webhook URL:", err);
+    }
+}
+
+// Run immediately when the page loads
+initWebhook();
+
+
 document.getElementById('whTarget').textContent = WEBHOOK_URL || 'not set';
 
 const chat = document.getElementById('chat');
