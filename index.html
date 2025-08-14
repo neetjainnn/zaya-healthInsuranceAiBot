@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zaya — Health Insurance Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0b0f14; --card:#121821; --muted:#7c8aa5; --text:#e6f1ff; --accent1:#03FDFC; --accent2:#00D8D8; --accent3:#03C0C1; --accent4:#009C9D; --accent5:#007F80; }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg, #0b0f14 0%, #0e1520 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(180deg, var(--accent1), var(--accent5));display:grid;place-items:center;font-weight:800;color:#001b1c}
+    .tag{font-size:12px;color:var(--muted)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.08);backdrop-filter: blur(8px);box-shadow:0 10px 30px rgba(0,0,0,0.35);border-radius:16px;padding:16px}
+    .grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+    @media (max-width: 860px){.grid{grid-template-columns:1fr}}
+    .chat{height:62vh;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+    .msg{max-width:80%;padding:10px 12px;border-radius:12px;line-height:1.35}
+    .user{align-self:flex-end;background:#0f2430;border:1px solid rgba(3,253,252,0.25)}
+    .bot{align-self:flex-start;background:#0f1320;border:1px solid rgba(255,255,255,0.08)}
+    .muted{color:var(--muted)}
+    .actions{display:flex;gap:8px;margin-top:10px}
+    button, .btn{appearance:none;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(180deg, #0f1b28, #0b131b);color:var(--text);padding:10px 12px;border-radius:12px;font-weight:600;cursor:pointer}
+    button:hover{border-color:rgba(3,253,252,0.4)}
+    input[type="text"]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:#0c131c;color:var(--text)}
+    .drop{border:1.5px dashed rgba(255,255,255,0.2);border-radius:14px;padding:14px;text-align:center}
+    .drop.drag{border-color:var(--accent3);background:rgba(0,216,216,0.06)}
+    .badge{font-size:11px;color:#001b1c;background:linear-gradient(90deg, var(--accent1), var(--accent4));padding:4px 8px;border-radius:999px;font-weight:800}
+    .small{font-size:12px}
+    a{color:var(--accent1)}
+  .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:24px}
+.hero-icon{font-size:36px}
+.hero-title{margin:0;font-size:28px;font-weight:800}
+.hero-sub{max-width:880px;color:var(--muted)}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.chip{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;background:#111827;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
+.chip:hover{border-color:rgba(3,253,252,0.35)}
+.chat-card{margin-top:16px}
+.input-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+.input-row input{flex:1}
+.attach button{min-width:44px}
+.tips{margin-top:14px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero card">
+      <div class="hero-icon" aria-hidden="true">🩺</div>
+      <h1 class="hero-title">Zaya – Health Insurance Assistant</h1>
+      <div class="hero-sub">Health Insurance Expert for India. Get policy recommendations, understand your current coverage, and receive claims assistance. Specialized in health insurance, mediclaim & critical illness policies.</div>
+
+      <div class="cta-row">
+        <button class="chip" data-intent="Find the best health insurance policy for me based on my age, city, budget and previous conditions.">🔎 <span>Find the Perfect Health Insurance Policy</span></button>
+        <button class="chip" data-intent="I want to understand my current policy. I'll upload the PDF now. Give me a plain-English summary with limits, exclusions and gotchas.">📄 <span>Understand My Current Policy</span></button>
+        <button class="chip" data-intent="I need help with an insurance claim. Tell me the step-by-step checklist and required documents.">🧩 <span>Get Help with Insurance Claims</span></button>
+      </div>
+    </header>
+
+    <section class="card chat-card">
+      <div id="chat" class="chat">
+        <div class="msg bot">Hi, I am Zaya. Ask me about the best policy for you, send a policy PDF to decode, or leave a short voice note. I will route it to our secure analyzer and reply here.</div>
+      </div>
+      <div class="input-row">
+        <div class="attach">
+          <button id="pick" title="Attach">📎</button>
+          <input id="file" type="file" accept="application/pdf,audio/*" style="display:none" />
+        </div>
+        <input id="text" type="text" placeholder="Ask anything…" aria-label="Message" />
+        <button id="record" title="Record">🎙️</button>
+        <button id="sendBtn" title="Send">➤</button>
+      </div>
+      <div id="picked" class="small muted" style="margin-top:6px"></div>
+    </section>
+
+    <section class="card tips">
+      <div class="small muted">Webhook target: <span id="whTarget">not set</span> · Tip: In DevTools run <code>localStorage.setItem('zaya_webhook','https://&lt;your-n8n&gt;/webhook/&lt;id&gt;')</code> then reload.</div>
+    </section>
+  </div>
+
+<script>
+const WEBHOOK_URL = localStorage.getItem('zaya_webhook') || '';
+document.getElementById('whTarget').textContent = WEBHOOK_URL || 'not set';
+
+const chat = document.getElementById('chat');
+const text = document.getElementById('text');
+const sendBtn = document.getElementById('sendBtn');
+const pickBtn = document.getElementById('pick');
+const fileInput = document.getElementById('file');
+const picked = document.getElementById('picked');
+const recordBtn = document.getElementById('record');
+let mediaRecorder, audioChunks = [];
+
+function pushMsg(role, content){
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role==='user'?'user':'bot');
+  div.textContent = content;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function postToWebhook(payload, files){
+  if(!WEBHOOK_URL){
+    alert('Set your n8n webhook first.');
+    return { error: 'No webhook set' };
+  }
+  const form = new FormData();
+  form.append('payload', new Blob([JSON.stringify(payload)], {type:'application/json'}));
+  if(files && files.length){ for (const f of files) form.append('files', f, f.name||'upload'); }
+  const res = await fetch(WEBHOOK_URL, { method:'POST', body: form });
+  const data = await res.json().catch(()=>({reply:'Received. Processing...'}));
+  return data;
+}
+
+sendBtn.addEventListener('click', async ()=>{
+  const q = text.value.trim();
+  if(!q) return; pushMsg('user', q); text.value='';
+  try{
+    const payload = { type:'text', text:q, client_ts: Date.now(), session: getSessionId(), source:'web' };
+    const { reply } = await postToWebhook(payload);
+    pushMsg('bot', reply || 'Got it. Analyzing…');
+  }catch(err){ pushMsg('bot','Error: ' + err.message); }
+});
+
+pickBtn.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', async ()=>{
+  if(!fileInput.files.length) return; const f = fileInput.files[0];
+  picked.textContent = 'Attached: ' + f.name; pushMsg('user', 'Uploaded: ' + f.name);
+  try{
+    const payload = { type:'file', filename:f.name, mimetype:f.type, client_ts:Date.now(), session:getSessionId(), source:'web' };
+    const { reply } = await postToWebhook(payload, [f]);
+    pushMsg('bot', reply || 'File received. Parsing…');
+  }catch(err){ pushMsg('bot','Error: ' + err.message); }
+});
+
+recordBtn.addEventListener('click', async ()=>{
+  try{
+    if(!mediaRecorder){
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) audioChunks.push(e.data) };
+      mediaRecorder.onstop = async ()=>{
+        const blob = new Blob(audioChunks, { type: 'audio/webm' }); audioChunks=[];
+        const file = new File([blob], 'voice.webm', { type: 'audio/webm' });
+        picked.textContent = 'Recorded voice note'; pushMsg('user','Sent a voice note');
+        const payload = { type:'audio', filename:'voice.webm', mimetype:file.type, client_ts:Date.now(), session:getSessionId(), source:'web' };
+        const { reply } = await postToWebhook(payload, [file]);
+        pushMsg('bot', reply || 'Transcribing…');
+      };
+    }
+    if(mediaRecorder.state==='recording'){ mediaRecorder.stop(); recordBtn.textContent='🎙️'; }
+    else { mediaRecorder.start(); recordBtn.textContent='⏹'; }
+  }catch(err){ alert('Mic error: '+err.message); }
+});
+
+// Quick intent chips
+for(const chip of document.querySelectorAll('.chip')){
+  chip.addEventListener('click', ()=>{ text.value = chip.dataset.intent; text.focus(); });
+}
+
+function getSessionId(){
+  let id = sessionStorage.getItem('zaya_sid');
+  if(!id){ id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2); sessionStorage.setItem('zaya_sid', id); }
+  return id;
+}
+</script>
+</body>
+</html>
