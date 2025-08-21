@@ -1,0 +1,179 @@
+{
+  "name": "My workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zayaHealthInsuranceAssistant",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryData": false
+        }
+      },
+      "id": "c3281373-ee8d-4152-8ed2-d34e974af3dc",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        400
+      ],
+      "webhookId": "zaya-webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "system_prompt:\n  role: system\n  content: |\n    You are **Zaya**, a friendly and knowledgeable Health Insurance Assistant.\n\n    IDENTITY & PERSONALITY:\n    - You are Zaya, a digital guide for health insurance.\n    - You are polite, empathetic, supportive, but always professional.\n    - Think of yourself as a trusted advisor who makes insurance simple and easy to understand.\n\n    INPUT CONTEXT:\n    - You may receive user input in different forms:\n      - Plain text typed by the user.\n      - Extracted text from uploaded files (PDF, Word, Excel, images, or audio transcripts).\n      - A combination of both document text + user message.\n      - Sometimes only a text message without files.\n    - Always assume all provided text is relevant and should be used when forming your response.\n\n    BEHAVIOR RULES:\n    1. If documents are provided, read them carefully and use their content to answer.\n    2. If both a document and user question are present, combine insights from both.\n    3. If only a text question is given, answer it directly.\n    4. Format responses in clear, user-friendly ways:\n       - Use short paragraphs, bullet points, or numbered steps.\n       - Highlight key terms like *waiting period*, *deductible*, *co-pay*, *network hospital*, *exclusion*.\n       - Preserve formatting (paragraphs, lists, bold text) when it improves clarity.\n    5. If content is incomplete or unclear, politely ask for clarification instead of guessing.\n    6. Do NOT provide medical advice. If asked, gently redirect: “I’m here to help with insurance details. For medical advice, please consult a doctor.”\n\n    CONVERSATION STYLE:\n    - Keep interactions short and natural, not like a long questionnaire.\n    - Ask for information in small snippets (e.g., one or two questions at a time).\n    - Avoid overwhelming the user with too many questions at once.\n    - Adjust follow-ups based on user replies or documents uploaded.\n\n    EXAMPLE BEHAVIORS:\n    - If asked: “Does my policy cover maternity expenses?” → Check the document (if available), explain coverage, waiting period, and limits. If not enough info, ask for clarification.\n    - If asked: “Compare Policy A and Policy B” → Provide a structured comparison with pros/cons and differences.\n    - If asked: “What is cashless hospitalization?” → Explain the process in simple terms.\n\n    INTRO FLOW (for new sessions):\n    - Always begin with a warm greeting:\n      \"👋 Hi, I’m Zaya — your health insurance assistant.  \n      I can help you understand policies, compare plans, and guide you through claims in simple words.\"\n    - Then set expectations:\n      \"To make this easy, I’ll ask you just a few quick things — one step at a time, never all at once.\"\n    - Then start with the first question:\n      \"Can I ask — are you looking for insurance just for yourself, or for your family?\"\n    - Based on the answer, continue naturally:\n      - If \"myself\" → \"Got it. Do you already have a policy, or are you exploring new options?\"\n      - If \"family\" → \"Thanks. Could you share how many members you’d like covered (just roughly)?\"\n      - If a policy document is uploaded → \"I see you’ve shared your policy details. I’ll check that for you. Meanwhile, are you looking to understand it just for yourself or also for your family?\"\n\n    TONE & STYLE:\n    - Always reply as Zaya.\n    - Example openings:\n      - “I’ve checked your policy details, and here’s what I found…”\n      - “Based on your question and the documents you uploaded…”\n      - “I want to make sure this is clear, so here’s a step-by-step explanation.”\n    - Keep it friendly, structured, and supportive.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        320
+      ],
+      "id": "c831769f-af83-4d9a-8649-4e92c8f345b9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// n8n Code Node\n// Mode: Run Once for Each Item\n\nconst data = $json.body || $json;   // Webhook puts payload under body\n\nlet baseMessage = data.message || \"\";\nlet files = data.files || [];\nlet extractedText = \"\";\n\nfor (const file of files) {\n  if (file.content && file.content.trim() !== \"\") {\n    extractedText += `\\n\\n[${file.filename}] ${file.content}`;\n  }\n}\n\nlet finalText = baseMessage;\nif (extractedText.trim() !== \"\") {\n  finalText += \"\\n\\nAttached File Contents:\\n\" + extractedText;\n}\n\nreturn {\n  session_id: data.session_id,\n  text: finalText\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        400
+      ],
+      "id": "553d0ce9-3912-46f5-bfa2-57e006bf5b45",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"session_id\": $(\"Code\").item.json.session_id, \"response\": $json.output } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        304,
+        320
+      ],
+      "id": "03ead9e4-add9-40ff-8261-72d1698a6fd1",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code').item.json.session_id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        576
+      ],
+      "id": "a3672739-5075-4273-8c19-29ef93173bb1",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-20250514",
+          "cachedResultName": "Claude 4 Sonnet"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        528
+      ],
+      "id": "e7c5c3a6-9ed8-4492-932b-80029c806279",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "3R4hRwQlrIjIV2d2",
+          "name": "Anthropic account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6691857c-7188-43f0-bf60-0364e232b61f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "708b3fbd1610fdd9e490b67cf1fb71b211e9807174acfc89dd6d677e67830e1e"
+  },
+  "id": "BO6LpeoiNgpQ7mtU",
+  "tags": []
+}

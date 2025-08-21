@@ -1,200 +1,425 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Zaya — Health Insurance Assistant</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind for quick styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Markdown renderer used for formatting during typing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js" crossorigin="anonymous"></script>
+
+  <!-- pdf.js for PDF extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+  <!-- xlsx for Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- tesseract.js for client-side OCR on images -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <style>
-    :root { --bg:#0b0f14; --card:#121821; --muted:#7c8aa5; --text:#e6f1ff; --accent1:#03FDFC; --accent2:#00D8D8; --accent3:#03C0C1; --accent4:#009C9D; --accent5:#007F80; }
-    *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg, #0b0f14 0%, #0e1520 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
-    .wrap{max-width:980px;margin:0 auto;padding:24px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-    .brand{display:flex;gap:12px;align-items:center}
-    .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(180deg, var(--accent1), var(--accent5));display:grid;place-items:center;font-weight:800;color:#001b1c}
-    .tag{font-size:12px;color:var(--muted)}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.08);backdrop-filter: blur(8px);box-shadow:0 10px 30px rgba(0,0,0,0.35);border-radius:16px;padding:16px}
-    .grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
-    @media (max-width: 860px){.grid{grid-template-columns:1fr}}
-    .chat{height:62vh;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
-    .msg{max-width:80%;padding:10px 12px;border-radius:12px;line-height:1.35}
-    .user{align-self:flex-end;background:#0f2430;border:1px solid rgba(3,253,252,0.25)}
-    .bot{align-self:flex-start;background:#0f1320;border:1px solid rgba(255,255,255,0.08)}
-    .muted{color:var(--muted)}
-    .actions{display:flex;gap:8px;margin-top:10px}
-    button, .btn{appearance:none;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(180deg, #0f1b28, #0b131b);color:var(--text);padding:10px 12px;border-radius:12px;font-weight:600;cursor:pointer}
-    button:hover{border-color:rgba(3,253,252,0.4)}
-    input[type="text"]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:#0c131c;color:var(--text)}
-    .drop{border:1.5px dashed rgba(255,255,255,0.2);border-radius:14px;padding:14px;text-align:center}
-    .drop.drag{border-color:var(--accent3);background:rgba(0,216,216,0.06)}
-    .badge{font-size:11px;color:#001b1c;background:linear-gradient(90deg, var(--accent1), var(--accent4));padding:4px 8px;border-radius:999px;font-weight:800}
-    .small{font-size:12px}
-    a{color:var(--accent1)}
-  .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:24px}
-.hero-icon{font-size:36px}
-.hero-title{margin:0;font-size:28px;font-weight:800}
-.hero-sub{max-width:880px;color:var(--muted)}
-.cta-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
-.chip{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;background:#111827;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
-.chip:hover{border-color:rgba(3,253,252,0.35)}
-.chat-card{margin-top:16px}
-.input-row{display:flex;gap:8px;align-items:center;margin-top:10px}
-.input-row input{flex:1}
-.attach button{min-width:44px}
-.tips{margin-top:14px}
-</style>
+    :root {
+      --bg:#0b0f14; --card:#121821; --muted:#7c8aa5; --text:#e6f1ff;
+      --accent:#03FDFC;
+    }
+    body { background: linear-gradient(135deg,#0b0f14 0%,#0e1520 100%); color:var(--text); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; height:100vh; margin:0; }
+    .app { max-width:1100px; margin:0 auto; padding:20px; display:flex; flex-direction:column; gap:16px; height:100vh; box-sizing:border-box; }
+    .glass { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:16px; }
+    .header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .hero { text-align:center; }
+    .hero h1 { margin:0; font-size:22px; font-weight:800; }
+    .hero p { margin:6px 0 0 0; color:var(--muted); font-size:13px; }
+
+    .intents { display:flex; gap:12px; margin-top:12px; }
+    .intent { flex:1; border-radius:12px; padding:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.06); background:#0f1720; }
+    .intent:hover { border-color: var(--accent); transform:translateY(-4px); transition:all .12s ease; }
+
+    .chat { flex:1; overflow:auto; display:flex; flex-direction:column; gap:12px; padding:12px; }
+    .bubble { max-width:78%; padding:12px 14px; border-radius:14px; line-height:1.5; word-break:break-word; }
+    .bubble.user { align-self:flex-end; background:#0f2430; border:1px solid rgba(3,253,252,0.18); }
+    .bubble.bot { align-self:flex-start; background:#0f1320; border:1px solid rgba(255,255,255,0.06); }
+
+    .chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    .chip { background:linear-gradient(90deg,var(--accent),#009c9d); color:#001b1c; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px; }
+
+    .input-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+    .input { flex:1; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.06); background:#0c131c; color:var(--text); min-height:44px; }
+    .icon-btn { appearance:none; border:none; background:linear-gradient(180deg,#0f1b28,#0b131b); color:var(--text); padding:10px 12px; border-radius:12px; cursor:pointer; }
+    .small { font-size:12px; color:var(--muted); }
+
+    .typing { color:var(--muted); font-style:italic; display:flex; gap:8px; align-items:center; }
+    .dots span { display:inline-block; width:6px; height:6px; border-radius:999px; background:var(--muted); opacity:.45; animation:blink 1.2s infinite; }
+    .dots span:nth-child(2) { animation-delay:.2s } .dots span:nth-child(3) { animation-delay:.4s }
+    @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+
+    /* scroll styles */
+    .chat::-webkit-scrollbar { height:8px; width:10px; } .chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius:8px; }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="hero card">
-      <div class="hero-icon" aria-hidden="true">🩺</div>
-      <h1 class="hero-title">Zaya – Health Insurance Assistant</h1>
-      <div class="hero-sub">Health Insurance Expert for India. Get policy recommendations, understand your current coverage, and receive claims assistance. Specialized in health insurance, mediclaim & critical illness policies.</div>
+  <div class="app">
+    <!-- Header / hero -->
+    <div class="glass header">
+      <div class="hero">
+        <div style="font-size:28px">🩺</div>
+        <h1>Zaya – Health Insurance Assistant</h1>
+        <p>Health Insurance Expert for India. Get policy recommendations, understand your current coverage, and receive claims & claims assistance.</p>
 
-      <div class="cta-row">
-        <button class="chip" data-intent="Find the best health insurance policy for me based on my age, city, budget and previous conditions.">🔎 <span>Find the Perfect Health Insurance Policy</span></button>
-        <button class="chip" data-intent="I want to understand my current policy. I'll upload the PDF now. Give me a plain-English summary with limits, exclusions and gotchas.">📄 <span>Understand My Current Policy</span></button>
-        <button class="chip" data-intent="I need help with an insurance claim. Tell me the step-by-step checklist and required documents.">🧩 <span>Get Help with Insurance Claims</span></button>
-      </div>
-    </header>
-
-    <section class="card chat-card">
-      <div id="chat" class="chat">
-        <div class="msg bot">Hi, I am Zaya. Ask me about the best policy for you, send a policy PDF to decode, or leave a short voice note. I will route it to our secure analyzer and reply here.</div>
-      </div>
-      <div class="input-row">
-        <div class="attach">
-          <button id="pick" title="Attach">📎</button>
-          <input id="file" type="file" accept="application/pdf,audio/*" style="display:none" />
+        <div class="intents" id="intents">
+          <div class="intent" data-intent="Find the best health insurance policy for me based on age, city, budget and previous conditions.">🔎 <div style="font-weight:700;margin-top:6px">Find the Perfect Health Insurance Policy</div><div class="small">Tell me your age, city & budget</div></div>
+          <div class="intent" data-intent="I want to understand my current policy. I'll upload the PDF now. Give me a plain-English summary with limits, exclusions and gotchas.">📄 <div style="font-weight:700;margin-top:6px">Understand My Current Policy</div><div class="small">Upload your policy PDF</div></div>
+          <div class="intent" data-intent="I need help with an insurance claim. Tell me the step-by-step checklist and required documents.">🧩 <div style="font-weight:700;margin-top:6px">Get Help with Insurance Claims</div><div class="small">Checklist & documents you’ll need</div></div>
         </div>
-        <input id="text" type="text" placeholder="Ask anything…" aria-label="Message" />
-        <button id="record" title="Record">🎙️</button>
-        <button id="sendBtn" title="Send">➤</button>
       </div>
-      <div id="picked" class="small muted" style="margin-top:6px"></div>
-    </section>
 
-    <section class="card tips">
-      <div class="small muted">Webhook target: <span id="whTarget">not set</span> · Tip: In DevTools run <code>localStorage.setItem('zaya_webhook','https://&lt;your-n8n&gt;/webhook/&lt;id&gt;')</code> then reload.</div>
-    </section>
+      <div style="width:260px;text-align:right">
+        <div style="height:6px"></div>
+      </div>
+    </div>
+
+    <!-- Chat area -->
+    <div class="glass" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+      <div id="chat" class="chat">
+        <div class="bubble bot"><div class="content">👋 Hi — I’m <strong>Zaya</strong>. Ask me about policies, upload a PDF, or leave a quick voice note. I’ll analyze and reply.</div></div>
+      </div>
+
+      <!-- file chips -->
+      <div id="chips" class="chips"></div>
+
+      <!-- input row -->
+      <div style="padding:12px;">
+        <div id="custom-input-bar" style="display:flex; align-items:center; background:#23272b; border-radius:28px; padding:0 18px; height:48px; border:1.5px solid #23272b; box-shadow:none;">
+          <button id="attachBtn" style="background:none; border:none; color:#b0b3b8; font-size:22px; margin-right:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; transition:background 0.2s;">+</button>
+          <input id="file" type="file" accept=".pdf,.csv,.xlsx,.xls,.txt,.jpg,.jpeg,.png,.mp3,.wav,.m4a" multiple style="display:none" />
+          <input id="text" style="flex:1; background:transparent; border:none; outline:none; color:#e4e6eb; font-size:16px; padding:0 8px;" placeholder="Ask anything" autocomplete="off" />
+          <button id="mic" style="background:none; border:none; color:#b0b3b8; font-size:20px; margin:0 6px; cursor:pointer; display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; transition:background 0.2s;" title="Record voice">�</button>
+          <button id="send" style="background:none; border:none; color:#b0b3b8; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; transition:background 0.2s;"> <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> </button>
+        </div>
+        <div class="small muted" style="margin-top:8px">Attach files (PDF, Excel, images). Microphone uses browser speech-to-text (English, en-IN).</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:center">
+      <div class="small muted">Frontend → <b>http://localhost:8000/chat</b> (proxy; webhook hidden on backend)</div>
+    </div>
   </div>
 
 <script>
-// REMOVE this old line, since we’re no longer defining WEBHOOK_URL manually
-// const WEBHOOK_URL = localStorage.getItem('zaya_webhook') || '';
+/* ---------- CONFIG ---------- */
+const BACKEND_CHAT = "http://localhost:8000/chat"; // FastAPI proxy
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
 
-async function initWebhook() {
-    try {
-        // Call your FastAPI backend to get the webhook URL
-        const res = await fetch("http://127.0.0.1:8000/get-webhook");
-        const data = await res.json();
-        
-        // Save to localStorage so rest of your script uses it
-        localStorage.setItem("zaya_webhook", data.webhook);
-
-        console.log("Webhook URL set from backend:", data.webhook);
-
-        // Show the URL in the UI
-        document.getElementById('whTarget').textContent = data.webhook || 'not set';
-    } catch (err) {
-        console.error("Failed to fetch webhook URL:", err);
-        document.getElementById('whTarget').textContent = 'error';
-    }
-}
-
-// Run immediately when the page loads
-initWebhook();
-
-// ❌ REMOVE this line — it references WEBHOOK_URL which no longer exists
-// document.getElementById('whTarget').textContent = WEBHOOK_URL || 'not set';
-
+/* ---------- DOM ---------- */
 const chat = document.getElementById('chat');
-const text = document.getElementById('text');
-const sendBtn = document.getElementById('sendBtn');
-const pickBtn = document.getElementById('pick');
+const textEl = document.getElementById('text');
+const sendBtn = document.getElementById('send');
+const attachBtn = document.getElementById('attachBtn');
 const fileInput = document.getElementById('file');
-const picked = document.getElementById('picked');
-const recordBtn = document.getElementById('record');
-let mediaRecorder, audioChunks = [];
+const chipsEl = document.getElementById('chips');
+const micBtn = document.getElementById('mic');
 
-function pushMsg(role, content){
-  const div = document.createElement('div');
-  div.className = 'msg ' + (role==='user'?'user':'bot');
-  div.textContent = content;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
+/* ---------- STATE ---------- */
+let pendingFiles = []; // File objects
+let micRecognition = null;
+let micActive = false;
 
-async function postToWebhook(payload, files){
-  const url = localStorage.getItem('zaya_webhook'); // ✅ NEW: get URL dynamically
-  if(!url){
-    alert('Set your n8n webhook first.');
-    return { error: 'No webhook set' };
-  }
-  const form = new FormData();
-  form.append('payload', new Blob([JSON.stringify(payload)], {type:'application/json'}));
-  if(files && files.length){ 
-    for (const f of files) form.append('files', f, f.name||'upload'); 
-  }
-  const res = await fetch(url, { method:'POST', body: form });
-  const data = await res.json().catch(()=>({reply:'Received. Processing...'}));
-  return data;
-}
-
-sendBtn.addEventListener('click', async ()=>{
-  const q = text.value.trim();
-  if(!q) return; pushMsg('user', q); text.value='';
-  try{
-    const payload = { type:'text', text:q, client_ts: Date.now(), session: getSessionId(), source:'web' };
-    const { reply } = await postToWebhook(payload);
-    pushMsg('bot', reply || 'Got it. Analyzing…');
-  }catch(err){ pushMsg('bot','Error: ' + err.message); }
-});
-
-pickBtn.addEventListener('click', ()=> fileInput.click());
-fileInput.addEventListener('change', async ()=>{
-  if(!fileInput.files.length) return; const f = fileInput.files[0];
-  picked.textContent = 'Attached: ' + f.name; pushMsg('user', 'Uploaded: ' + f.name);
-  try{
-    const payload = { type:'file', filename:f.name, mimetype:f.type, client_ts:Date.now(), session:getSessionId(), source:'web' };
-    const { reply } = await postToWebhook(payload, [f]);
-    pushMsg('bot', reply || 'File received. Parsing…');
-  }catch(err){ pushMsg('bot','Error: ' + err.message); }
-});
-
-recordBtn.addEventListener('click', async ()=>{
-  try{
-    if(!mediaRecorder){
-      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) audioChunks.push(e.data) };
-      mediaRecorder.onstop = async ()=>{
-        const blob = new Blob(audioChunks, { type: 'audio/webm' }); audioChunks=[];
-        const file = new File([blob], 'voice.webm', { type: 'audio/webm' });
-        picked.textContent = 'Recorded voice note'; pushMsg('user','Sent a voice note');
-        const payload = { type:'audio', filename:'voice.webm', mimetype:file.type, client_ts:Date.now(), session:getSessionId(), source:'web' };
-        const { reply } = await postToWebhook(payload, [file]);
-        pushMsg('bot', reply || 'Transcribing…');
-      };
-    }
-    if(mediaRecorder.state==='recording'){ mediaRecorder.stop(); recordBtn.textContent='🎙️'; }
-    else { mediaRecorder.start(); recordBtn.textContent='⏹'; }
-  }catch(err){ alert('Mic error: '+err.message); }
-});
-
-// Quick intent chips
-for(const chip of document.querySelectorAll('.chip')){
-  chip.addEventListener('click', ()=>{ text.value = chip.dataset.intent; text.focus(); });
-}
-
+/* ---------- HELPERS ---------- */
 function getSessionId(){
   let id = sessionStorage.getItem('zaya_sid');
-  if(!id){ id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2); sessionStorage.setItem('zaya_sid', id); }
+  if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2); sessionStorage.setItem('zaya_sid', id); }
   return id;
 }
-</script>
+function appendBubble(role, html){
+  const el = document.createElement('div');
+  el.className = 'bubble ' + (role === 'user' ? 'user' : 'bot');
+  const inner = document.createElement('div');
+  inner.className = 'content';
+  inner.innerHTML = html;
+  el.appendChild(inner);
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+  return el;
+}
+function showTyping(){
+  const wrap = document.createElement('div');
+  wrap.className = 'typing';
+  wrap.innerHTML = `<span>Zaya is typing</span> <span class="dots"><span></span><span></span><span></span></span>`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return wrap;
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+/* ---------- FORMATTING for markdown-like text ---------- */
+function formatToHTML(md){
+  if (!md) return '';
+  // escape HTML first
+  const esc = (s)=> s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  // Basic: paragraphs (double newline) -> <p>, bold **text**, lists -, numbered
+  let out = esc(md);
+  // Bold
+  out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic
+  out = out.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Ordered lists
+  out = out.replace(/(?:\n|^)\s*\d+\.\s+(.+?)(?=\n|$)/g, (m,p1)=>`<div>1. ${p1}</div>`);
+  // Unordered lists
+  out = out.replace(/(?:\n|^)\s*[-\*]\s+(.+?)(?=\n|$)/g, (m,p1)=>`<div>• ${p1}</div>`);
+  // Paragraphs
+  out = out.split(/\n\n+/).map(para => {
+    return `<p style="margin:6px 0">${para.replace(/\n/g,'<br/>')}</p>`;
+  }).join('');
+  return out;
+}
+
+/* ---------- TYPING EFFECT (character by character) ---------- */
+async function typeIntoBubble(bubbleEl, text){
+  const container = bubbleEl.querySelector('.content');
+  container.innerHTML = ''; // start empty
+  // We'll progressively append and set innerHTML using our formatter on chunks
+  let plain = text;
+  let i = 0;
+  while (i < plain.length){
+    i += 2; // two chars per tick
+    const partial = plain.slice(0,i);
+    container.innerHTML = formatToHTML(partial);
+    chat.scrollTop = chat.scrollHeight;
+    await sleep(8);
+  }
+  container.innerHTML = formatToHTML(plain);
+}
+
+/* ---------- FILE EXTRACTION (client-side) ---------- */
+async function extractPDF(file){
+  try{
+    const buf = await file.arrayBuffer();
+    const loading = pdfjsLib.getDocument({data:buf});
+    const pdf = await loading.promise;
+    let out = '';
+    for (let p=1;p<=pdf.numPages;p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      out += content.items.map(it=>it.str).join(' ') + '\n';
+    }
+    return out.trim();
+  }catch(e){
+    return `[${file.name}] PDF extraction error: ${e.message}`;
+  }
+}
+async function extractExcel(file){
+  try{
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, {type:'array'});
+    let out = '';
+    wb.SheetNames.forEach(name=>{
+      const ws = wb.Sheets[name];
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      out += `\n[Sheet: ${name}]\n${csv}`;
+    });
+    return out.trim();
+  }catch(e){
+    return `[${file.name}] Excel extraction error: ${e.message}`;
+  }
+}
+async function extractImage(file){
+  try{
+    const res = await Tesseract.recognize(file, 'eng');
+    return res.data.text.trim();
+  }catch(e){
+    return `[${file.name}] OCR error: ${e.message}`;
+  }
+}
+async function extractPlain(file){
+  try{
+    return (await file.text()).trim();
+  }catch(e){
+    return `[${file.name}] text read error: ${e.message}`;
+  }
+}
+
+async function extractFileContent(file){
+  const name = (file.name||'file').toLowerCase();
+  if (name.endsWith('.pdf')) return await extractPDF(file);
+  if (name.endsWith('.xlsx') || name.endsWith('.xls') || file.type.includes('sheet')) return await extractExcel(file);
+  if (/\.(png|jpg|jpeg)$/i.test(name) || file.type.startsWith('image/')) return await extractImage(file);
+  if (file.type.startsWith('text/') || name.endsWith('.txt')) return await extractPlain(file);
+  if (/\.(mp3|wav|m4a|webm)$/i.test(name) || file.type.startsWith('audio/')) {
+    return `[Audio file attached: ${file.name}. Use mic-record to transcribe or transcribe server-side.]`;
+  }
+  return `[${file.name}] Unsupported for client extraction`;
+}
+
+/* ---------- UI: file chips ---------- */
+function renderFileChips(){
+  chipsEl.innerHTML = '';
+  pendingFiles.forEach(f=>{
+    const span = document.createElement('span');
+    span.className = 'chip';
+    span.textContent = f.name;
+    chipsEl.appendChild(span);
+  });
+}
+
+/* ---------- EVENTS ---------- */
+// Quick intents click -> insert prompt
+document.querySelectorAll('.intent').forEach(card=>{
+  card.addEventListener('click', () => {
+    text.value = card.dataset.intent || '';
+    text.focus();
+  });
+});
+
+// Attach file button
+attachBtn.addEventListener('click', ()=> fileInput.click());
+
+fileInput.addEventListener('change', async (ev)=>{
+  const files = Array.from(ev.target.files || []);
+  if (!files.length) return;
+  // push files and render chips; start extracting content in background
+  for (const f of files){
+    pendingFiles.push(f);
+  }
+  renderFileChips();
+});
+
+/* ---------- Mic (Web Speech API) ----------
+   - Click mic to start/stop. Transcription is stored and also added as pseudo-file.
+*/
+micBtn.addEventListener('click', ()=>{
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { alert('Speech recognition not supported in this browser'); return; }
+  if (micActive){
+    micRecognition.stop();
+    return;
+  }
+  micRecognition = new SpeechRec();
+  micRecognition.lang = 'en-IN';
+  micRecognition.interimResults = true;
+  micRecognition.onresult = (ev)=>{
+    let interim='';
+    let final='';
+    for (let i=ev.resultIndex;i<ev.results.length;i++){
+      const r = ev.results[i];
+      if (r.isFinal) final += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    text.value = (final || interim).trim();
+  };
+  micRecognition.onend = ()=>{
+    micActive = false;
+    micBtn.textContent = '🎙️';
+    // if there's final transcript add as pseudo file to pendingFiles
+    if (text.value && text.value.trim()){
+      const pseudo = new File([], 'voice-note.txt',{type:'text/plain'});
+      pseudo.__zaya_text = text.value.trim();
+      pendingFiles.push(pseudo);
+      renderFileChips();
+    }
+  };
+  micRecognition.onerror = (e)=>{
+    console.error('Mic error', e);
+    micActive = false;
+    micBtn.textContent = '🎙️';
+  };
+  micActive = true;
+  micBtn.textContent = '⏹';
+  micRecognition.start();
+});
+
+/* ---------- SEND flow ----------
+   - Build list of extracted files (filename + content)
+   - Send JSON to backend /chat
+   - Show typing indicator and stream response char-by-char into a bubble
+*/
+sendBtn.addEventListener('click', sendNow);
+
+text.addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendNow();
+  }
+});
+
+async function sendNow(){
+  const userMsg = (text.value || '').trim();
+  if (!userMsg && !pendingFiles.length) return;
+
+  // show user bubble
+  appendBubble('user', formatToHTML(userMsg || '📎 Attachment'));
+
+  // Prepare files array: filename + content
+  const filesForBackend = [];
+  if (pendingFiles.length){
+    // Extract each file content (in parallel but preserve order)
+    for (const f of pendingFiles){
+      if (f.__zaya_text){ // pseudo file from mic
+        filesForBackend.push({ filename: f.name || 'voice-note.txt', content: f.__zaya_text });
+      } else {
+        // show temporary chip content while extracting
+        filesForBackend.push({ filename: f.name, content: '[Extracting...]' });
+      }
+    }
+    // kick off extraction and replace placeholder contents
+    for (let i=0;i<pendingFiles.length;i++){
+      const f = pendingFiles[i];
+      if (f.__zaya_text){
+        // already set
+        continue;
+      } else {
+        try {
+          const content = await extractFileContent(f);
+          filesForBackend[i].content = content;
+        } catch(err){
+          filesForBackend[i].content = `[${f.name}] extraction failed: ${err.message || err}`;
+        }
+      }
+    }
+  }
+
+  // reset input + chips immediately for UX
+  text.value = '';
+  pendingFiles = [];
+  renderFileChips();
+
+  // Show typing indicator
+  const typingEl = showTyping();
+
+  // Build payload
+  const payload = {
+    session_id: getSessionId(),
+    message: userMsg,
+    files: filesForBackend
+  };
+
+  try {
+    const res = await fetch(BACKEND_CHAT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    typingEl.remove();
+
+    // Determine text from response (n8n flow may return { response } or { reply } or raw string)
+    let responseText = '';
+    if (data === null) responseText = 'No response';
+    else if (typeof data === 'string') responseText = data;
+    else if (data.response) responseText = data.response;
+    else if (data.reply) responseText = data.reply;
+    else responseText = JSON.stringify(data);
+
+    // Show assistant bubble and type into it
+    const botBubble = appendBubble('bot',''); // empty
+    await typeIntoBubble(botBubble, responseText);
+  } catch (err) {
+    typingEl.remove();
+    appendBubble('bot', `<strong>Error:</strong> ${err.message || err}`);
+  }
+}
+</script>
 </body>
 </html>
